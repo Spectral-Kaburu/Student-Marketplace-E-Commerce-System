@@ -9,7 +9,7 @@
         <a href="{{ detail_url }}" class="listing-card">
             {% with first_image=item.images.first %}
                 <div class="listing-media">
-                    {% if first_image %}
+                    {% if first_image and first_image.image %}
                         <img src="{{ first_image.image.url }}" alt="{{ item.title }}">
                     {% else %}
                         <img src="{% static 'img/placeholder.png' %}" alt="No image">
