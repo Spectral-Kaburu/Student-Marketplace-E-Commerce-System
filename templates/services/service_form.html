@@ -9,8 +9,32 @@
         <h3 class="section-title" style="font-size:13px;text-transform:uppercase;color:var(--ink-faint);letter-spacing:.04em;">Service details</h3>
         {{ form.as_p }}
 
-        <h3 class="section-title" style="font-size:13px;text-transform:uppercase;color:var(--ink-faint);letter-spacing:.04em;margin-top:8px;">Photo</h3>
+        <h3 class="section-title" style="font-size:13px;text-transform:uppercase;color:var(--ink-faint);letter-spacing:.04em;margin-top:8px;">Photos</h3>
+
+        {% if object and object.images.all %}
+            <div style="margin-bottom:12px;">
+                <p style="font-size:13px;color:var(--ink-faint);margin-bottom:8px;">Current images:</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    {% for img in object.images.all %}
+                        {% if img.image %}
+                            <div style="position:relative;width:80px;height:80px;border-radius:var(--radius);border:1px solid var(--amber-100);overflow:hidden;">
+                                <img src="{{ img.image.url }}" alt="Existing image" style="width:100%;height:100%;object-fit:cover;">
+                                <button type="button"
+                                        onclick="if(confirm('Delete this image?')){document.getElementById('delete-img-{{ img.id }}').click();}"
+                                        style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:white;border:none;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+                                <form id="delete-img-{{ img.id }}" method="post" action="{% url 'service_image_delete' img.id %}" style="display:none;">
+                                    {% csrf_token %}
+                                </form>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
         {{ image_form.as_p }}
+
+        <p style="font-size:12px;color:var(--ink-faint);">Select up to 15 images. Hold Ctrl/Cmd to select multiple files.</p>
 
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:16px;">
             <a href="{% url 'service_list' %}" class="btn btn-outline">Cancel</a>
