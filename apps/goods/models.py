@@ -92,7 +92,8 @@ class GoodImage(models.Model):
 
     # Real file upload (switched from URLField per Step 2a) so sellers can
     # upload an actual photo during the live demo instead of pasting a link.
-    image = models.ImageField(upload_to='goods/%Y/%m/')
+    # Nullable/blankable: we allow listings without photos.
+    image = models.ImageField(upload_to='goods/%Y/%m/', null=True, blank=True)
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -124,5 +125,4 @@ class GoodImage(models.Model):
 
     def __str__(self):
 
-        return f"Image for {self.good.title}" 
-
+        return f"Image for {self.good.title}"

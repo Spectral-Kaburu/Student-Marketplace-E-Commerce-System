@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 from apps.catalog.models import Category, CampusLocation
 
@@ -41,8 +42,15 @@ class ServiceImage(models.Model):
         on_delete=models.CASCADE,
         related_name="images"
     )
-    image = models.ImageField(upload_to="services/")
+    # Nullable/blankable: allow services without photos
+    image = models.ImageField(upload_to="services/", null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        # Enforce max 15 images per service (mirrors GoodImage)
+        if self.service_id and self.service.images.count() >= 15 and not self.pk:
+            raise ValidationError("A maximum of 15 images is allowed per service.")
 
     def __str__(self):
         return f"Image for {self.service.title}"
+    
