@@ -6,15 +6,33 @@
 <div style="display:grid;grid-template-columns:1fr;gap:32px;" class="detail-grid">
     <style>@media (min-width: 768px){ .detail-grid { grid-template-columns: 1fr 1fr; } }</style>
 
-    {% with first_image=service.images.first %}
-        <div class="listing-media" style="border-radius:var(--radius-lg);border:1px solid var(--amber-100);">
-            {% if first_image %}
-                <img src="{{ first_image.image.url }}" alt="{{ service.title }}">
+    <div class="listing-media" style="border-radius:var(--radius-lg);border:1px solid var(--amber-100);position:relative;">
+        {% with images=service.images.all %}
+            {% if images %}
+                {% with first_image=images.first %}
+                    {% if first_image.image %}
+                        <img id="main-image" src="{{ first_image.image.url }}" alt="{{ service.title }}" style="width:100%;height:auto;border-radius:var(--radius-lg);">
+                    {% else %}
+                        <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
+                    {% endif %}
+                {% endwith %}
+                {% if images|length > 1 %}
+                    <div class="image-thumbnails" style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:4px;">
+                        {% for img in images %}
+                            {% if img.image %}
+                                <img src="{{ img.image.url }}" alt="{{ service.title }} - image {{ forloop.counter }}"
+                                     class="thumbnail {% if forloop.first %}active{% endif %}"
+                                     style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius);border:2px solid {% if forloop.first %}var(--amber-500){% else %}transparent{% endif %};cursor:pointer;transition:border-color 0.2s;"
+                                     onclick="document.getElementById('main-image').src='{{ img.image.url }}'; document.querySelectorAll('.thumbnail').forEach(t=>t.style.borderColor='transparent'); this.style.borderColor='var(--amber-500)';">
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% else %}
-                <img src="{% static 'img/placeholder.png' %}" alt="No image">
+                <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
             {% endif %}
-        </div>
-    {% endwith %}
+        {% endwith %}
+    </div>
 
     <div>
         <div style="margin-bottom:8px;">
