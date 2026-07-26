@@ -1,15 +1,31 @@
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.template.loader import render_to_string
+from django.contrib import messages
 
 from apps.catalog.models import Category
 
 # Make sure to import your new forms and the GoodImage model
 from .models import Good, GoodImage
 from .forms import GoodForm, GoodImageForm
+
+
+class GoodImageDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = GoodImage
+    template_name = 'goods/good_image_confirm_delete.html'
+
+    def test_func(self):
+        return self.get_object().good.seller == self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy('good_update', kwargs={'pk': self.get_object().good.pk})
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Image deleted successfully.")
+        return super().delete(request, *args, **kwargs)
 
 class GoodListView(ListView):
     model = Good
@@ -78,15 +94,18 @@ class GoodCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # Assign the logged-in user as the seller
-        form.instance.seller = self.request.user 
-        
+        form.instance.seller = self.request.user
+
         context = self.get_context_data()
         image_form = context['image_form']
-        
+
         if image_form.is_valid():
             self.object = form.save()
-            if image_form.cleaned_data.get('image'):
-                GoodImage.objects.create(good=self.object, image=image_form.cleaned_data['image'])
+            # Handle multiple image uploads
+            images = self.request.FILES.getlist('image')
+            for image in images:
+                if image:
+                    GoodImage.objects.create(good=self.object, image=image)
             return super().form_valid(form)
         else:
             return self.render_to_response(self.get_context_data(form=form))
@@ -100,7 +119,7 @@ class GoodUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         """Ensure only the seller can edit their item."""
         obj = self.get_object()
-        return obj.seller == self.request.user 
+        return obj.seller == self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -113,14 +132,14 @@ class GoodUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def form_valid(self, form):
         context = self.get_context_data()
         image_form = context['image_form']
-        
+
         if image_form.is_valid():
             self.object = form.save()
-            if image_form.cleaned_data.get('image'):
-                GoodImage.objects.update_or_create(
-                    good=self.object,
-                    defaults={'image': image_form.cleaned_data['image']}
-                )
+            # Handle multiple image uploads - add new images
+            images = self.request.FILES.getlist('image')
+            for image in images:
+                if image:
+                    GoodImage.objects.create(good=self.object, image=image)
             return super().form_valid(form)
         else:
             return self.render_to_response(self.get_context_data(form=form))

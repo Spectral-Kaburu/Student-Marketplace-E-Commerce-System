@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.template.loader import render_to_string
+from django.contrib import messages
 
 from .models import Service, ServiceImage
 from .forms import ServiceForm, ServiceImageForm
@@ -48,8 +49,11 @@ def service_create(request):
             service = form.save(commit=False)
             service.seller = request.user
             service.save()
-            if image_form.cleaned_data.get('image'):
-                ServiceImage.objects.create(service=service, image=image_form.cleaned_data['image'])
+            # Handle multiple image uploads
+            images = request.FILES.getlist('image')
+            for image in images:
+                if image:
+                    ServiceImage.objects.create(service=service, image=image)
             return redirect("service_detail", pk=service.pk)
     else:
         form = ServiceForm()
@@ -74,11 +78,11 @@ def service_update(request, pk):
 
         if form.is_valid() and image_form.is_valid():
             service = form.save()
-            if image_form.cleaned_data.get('image'):
-                ServiceImage.objects.update_or_create(
-                    service=service,
-                    defaults={'image': image_form.cleaned_data['image']}
-                )
+            # Handle multiple image uploads - add new images
+            images = request.FILES.getlist('image')
+            for image in images:
+                if image:
+                    ServiceImage.objects.create(service=service, image=image)
             return redirect("service_detail", pk=service.pk)
     else:
         form = ServiceForm(instance=service)
@@ -103,4 +107,21 @@ def service_delete(request, pk):
 
     return render(request, "services/service_confirm_delete.html", {
         "service": service
+    })
+
+
+@login_required
+def service_image_delete(request, pk):
+    image = get_object_or_404(ServiceImage, pk=pk)
+    if image.service.seller != request.user:
+        raise PermissionDenied("Only the seller can delete this image.")
+
+    if request.method == "POST":
+        service_pk = image.service.pk
+        image.delete()
+        messages.success(request, "Image deleted successfully.")
+        return redirect("service_update", pk=service_pk)
+
+    return render(request, "services/service_image_confirm_delete.html", {
+        "image": image
     })
