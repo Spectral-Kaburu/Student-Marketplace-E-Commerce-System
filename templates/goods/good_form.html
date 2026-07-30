@@ -3,6 +3,7 @@
 <div class="card card-pad" style="max-width:560px;margin:0 auto;">
     <h1 class="section-title" style="font-size:22px;">{% if object %}Edit Listing{% else %}Post a New Good{% endif %}</h1>
 
+    <!-- MAIN FORM -->
     <form method="post" enctype="multipart/form-data" class="stack" style="margin-top:16px;">
         {% csrf_token %}
 
@@ -19,12 +20,10 @@
                         {% if img.image %}
                             <div style="position:relative;width:80px;height:80px;border-radius:var(--radius);border:1px solid var(--amber-100);overflow:hidden;">
                                 <img src="{{ img.image.url }}" alt="Existing image" style="width:100%;height:100%;object-fit:cover;">
+                                <!-- Button still triggers the form submission outside -->
                                 <button type="button"
-                                        onclick="if(confirm('Delete this image?')){document.getElementById('delete-img-{{ img.id }}').click();}"
+                                        onclick="if(confirm('Delete this image?')){document.getElementById('delete-img-{{ img.id }}').submit();}"
                                         style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:white;border:none;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
-                                <form id="delete-img-{{ img.id }}" method="post" action="{% url 'good_image_delete' img.id %}" style="display:none;">
-                                    {% csrf_token %}
-                                </form>
                             </div>
                         {% endif %}
                     {% endfor %}
@@ -33,7 +32,6 @@
         {% endif %}
 
         {{ image_form.as_p }}
-
         <p style="font-size:12px;color:var(--ink-faint);">Select up to 15 images. Hold Ctrl/Cmd to select multiple files.</p>
 
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:16px;">
@@ -41,5 +39,16 @@
             <button type="submit" class="btn btn-primary">{% if object %}Save changes{% else %}Post listing{% endif %}</button>
         </div>
     </form>
+    <!-- END MAIN FORM -->
+
+    <!-- HIDDEN DELETE FORMS (Placed outside the main form so HTML remains valid) -->
+    {% if object and object.images.all %}
+        {% for img in object.images.all %}
+            <form id="delete-img-{{ img.id }}" method="post" action="{% url 'good_image_delete' img.id %}" style="display:none;">
+                {% csrf_token %}
+            </form>
+        {% endfor %}
+    {% endif %}
+
 </div>
 {% endblock %}

@@ -93,22 +93,16 @@ class GoodCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        # Assign the logged-in user as the seller
         form.instance.seller = self.request.user
-
-        context = self.get_context_data()
-        image_form = context['image_form']
+        image_form = GoodImageForm(self.request.POST, self.request.FILES)
 
         if image_form.is_valid():
             self.object = form.save()
-            # Handle multiple image uploads
-            images = self.request.FILES.getlist('image')
-            for image in images:
-                if image:
-                    GoodImage.objects.create(good=self.object, image=image)
+            for image in self.request.FILES.getlist('image'):
+                GoodImage.objects.create(good=self.object, image=image)
             return super().form_valid(form)
-        else:
-            return self.render_to_response(self.get_context_data(form=form))
+
+        return self.render_to_response(self.get_context_data(form=form, image_form=image_form))
 
 class GoodUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Good
@@ -130,19 +124,15 @@ class GoodUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        context = self.get_context_data()
-        image_form = context['image_form']
-
+        image_form = GoodImageForm(self.request.POST, self.request.FILES)
+        
         if image_form.is_valid():
             self.object = form.save()
-            # Handle multiple image uploads - add new images
-            images = self.request.FILES.getlist('image')
-            for image in images:
-                if image:
-                    GoodImage.objects.create(good=self.object, image=image)
+            for image in self.request.FILES.getlist('image'):
+                GoodImage.objects.create(good=self.object, image=image)
             return super().form_valid(form)
-        else:
-            return self.render_to_response(self.get_context_data(form=form))
+        
+        return self.render_to_response(self.get_context_data(form=form, image_form=image_form))
 
 class GoodDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Good

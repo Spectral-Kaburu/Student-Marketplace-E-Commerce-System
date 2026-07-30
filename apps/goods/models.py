@@ -4,6 +4,8 @@ from django.conf import settings
 
 from django.core.exceptions import ValidationError
 
+from apps.common.image_processing import process_image, processed_filename
+
 
 
 class Good(models.Model):
@@ -119,10 +121,22 @@ class GoodImage(models.Model):
 
         self.clean()
 
+        # Only process a freshly-uploaded file, not an already-committed
+        # one -- otherwise every unrelated re-save (e.g. admin editing
+        # uploaded_at, or a future bulk update) would re-crop the image
+        # from its own already-cropped output and degrade it through
+        # repeated JPEG re-compression.
+        if self.image and not self.image._committed:
+            processed = process_image(self.image)
+            if processed:
+                new_name = processed_filename(self.image.name)
+                self.image.save(new_name, processed, save=False)
+
         super().save(*args, **kwargs)
 
 
 
     def __str__(self):
 
-        return f"Image for {self.good.title}"
+        return f"Image for {self.good.title}" 
+

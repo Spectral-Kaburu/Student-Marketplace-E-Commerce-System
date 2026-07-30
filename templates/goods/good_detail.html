@@ -1,75 +1,87 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<a href="{% url 'good_list' %}" class="btn-ghost" style="display:inline-block;margin-bottom:24px;font-size:14px;font-weight:500;">← Back to all items</a>
+<a href="{% url 'good_list' %}" class="btn-ghost" style="display:inline-block;margin-bottom:20px;font-size:14px;font-weight:500;">← Back to all items</a>
 
-<div style="display:grid;grid-template-columns:1fr;gap:32px;" class="detail-grid">
-    <style>@media (min-width: 768px){ .detail-grid { grid-template-columns: 1fr 1fr; } }</style>
-
-    <div class="listing-media" style="border-radius:var(--radius-lg);border:1px solid var(--amber-100);position:relative;">
+<div class="detail-grid">
+    <!-- GALLERY SECTION (Prominent 65% width on desktop) -->
+    <div class="listing media">
         {% with images=good.images.all %}
             {% if images %}
                 {% with first_image=images.first %}
-                    {% if first_image.image %}
-                        <img id="main-image" src="{{ first_image.image.url }}" alt="{{ good.title }}" style="width:100%;height:auto;border-radius:var(--radius-lg);">
-                    {% else %}
-                        <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
+                    <div class="detail-gallery-main-wrapper">
+                        {% if first_image.image %}
+                            <img id="main-image" class="detail-gallery-main" src="{{ first_image.image.url }}" alt="{{ good.title }}">
+                        {% else %}
+                            <img class="detail-gallery-main" src="{% static 'img/placeholder.png' %}" alt="No image">
+                        {% endif %}
+                    </div>
+
+                    <!-- CAROUSEL STRIP: Now below the image container -->
+                    {% if images|length > 1 %}
+                        <div class="detail-thumbnails-floating">
+                            {% for img in images %}
+                                {% if img.image %}
+                                    <img src="{{ img.image.url }}" alt="{{ good.title }} - image {{ forloop.counter }}"
+                                         class="detail-thumbnail {% if forloop.first %}active{% endif %}"
+                                         onclick="document.getElementById('main-image').src='{{ img.image.url }}'; document.querySelectorAll('.detail-thumbnail').forEach(t=>t.classList.remove('active')); this.classList.add('active');">
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                     {% endif %}
                 {% endwith %}
-                {% if images|length > 1 %}
-                    <div class="image-thumbnails" style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:4px;">
-                        {% for img in images %}
-                            {% if img.image %}
-                                <img src="{{ img.image.url }}" alt="{{ good.title }} - image {{ forloop.counter }}"
-                                     class="thumbnail {% if forloop.first %}active{% endif %}"
-                                     style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius);border:2px solid {% if forloop.first %}var(--amber-500){% else %}transparent{% endif %};cursor:pointer;transition:border-color 0.2s;"
-                                     onclick="document.getElementById('main-image').src='{{ img.image.url }}'; document.querySelectorAll('.thumbnail').forEach(t=>t.style.borderColor='transparent'); this.style.borderColor='var(--amber-500)';">
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                {% endif %}
             {% else %}
-                <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
+                <div class="detail-gallery-main-wrapper">
+                    <img class="detail-gallery-main" src="{% static 'img/placeholder.png' %}" alt="No image">
+                </div>
             {% endif %}
         {% endwith %}
     </div>
 
-    <div>
+    <!-- DETAILS SIDEBAR -->
+    <div class="detail-info">
         <h1 class="page-title">{{ good.title }}</h1>
-        <p class="listing-price" style="font-size:22px;margin-top:8px;">KES {{ good.price }}</p>
+        <p class="listing-price" style="font-size:24px;font-weight:700;margin-top:6px;">KES {{ good.price }}</p>
 
-        <div style="margin:16px 0;">
+        <div style="margin:16px 0;display:flex;gap:8px;flex-wrap:wrap;">
             <span class="badge badge-muted">{{ good.category }}</span>
             <span class="badge badge-moss">{{ good.condition }}</span>
         </div>
 
-        <h3 class="section-title" style="font-size:14px;text-transform:uppercase;color:var(--ink-faint);letter-spacing:.04em;">Description</h3>
-        <p style="font-size:15px;line-height:1.6;color:var(--ink-soft);">{{ good.description }}</p>
+        <hr style="border:0;border-top:1px solid var(--amber-100);margin:20px 0;">
 
-        <p class="text-muted" style="margin-top:16px;font-size:14px;"><strong style="color:var(--ink);">Posted by:</strong> {{ good.seller.username }}</p>
+        <h3 class="section-title" style="font-size:13px;text-transform:uppercase;color:var(--ink-faint);letter-spacing:.04em;margin-bottom:8px;">Description</h3>
+        <p style="font-size:15px;line-height:1.6;color:var(--ink-soft);white-space:pre-line;">{{ good.description }}</p>
 
-        <div style="margin:12px 0;">
-            {% if good.seller.profile.is_open %}
-                <span class="badge badge-moss">🟢 Seller is open for business</span>
-            {% else %}
-                <span class="badge badge-muted">⚪ Seller is currently closed</span>
+        <hr style="border:0;border-top:1px solid var(--amber-100);margin:20px 0;">
+
+        <div style="background:var(--amber-50);padding:16px;border-radius:var(--radius);border:1px solid var(--amber-100);">
+            <p style="font-size:14px;margin-bottom:8px;"><strong style="color:var(--ink);">Posted by:</strong> {{ good.seller.username }}</p>
+
+            <div style="margin-bottom:12px;">
+                {% if good.seller.profile.is_open %}
+                    <span class="badge badge-moss">🟢 Seller is open for business</span>
+                {% else %}
+                    <span class="badge badge-muted">⚪ Seller is currently closed</span>
+                {% endif %}
+            </div>
+
+            {% if good.seller.profile.phone_number %}
+                <p style="font-size:14px;margin:0;">
+                    <strong style="color:var(--ink);">Contact (WhatsApp):</strong><br>
+                    <a href="https://wa.me/{{ good.seller.profile.phone_number }}" style="color:var(--amber-400);font-weight:600;" target="_blank" rel="noopener">
+                        💬 {{ good.seller.profile.phone_number }}
+                    </a>
+                </p>
             {% endif %}
         </div>
-        {% if good.seller.profile.phone_number %}
-            <p style="font-size:14px;">
-                <strong style="color:var(--ink);">Contact (WhatsApp):</strong>
-                <a href="https://wa.me/{{ good.seller.profile.phone_number }}" style="color:var(--amber-600);font-weight:600;" target="_blank" rel="noopener">
-                    {{ good.seller.profile.phone_number }}
-                </a>
-            </p>
-        {% endif %}
 
-        <div style="margin-top:24px;">
-            {% if request.user == good.seller %}
-                <a href="{% url 'good_update' good.pk %}" class="btn btn-outline">Edit listing</a>
+        {% if request.user == good.seller %}
+            <div style="margin-top:24px;display:flex;gap:12px;">
+                <a href="{% url 'good_update' good.pk %}" class="btn btn-outline" style="flex:1;text-align:center;">Edit listing</a>
                 <a href="{% url 'good_delete' good.pk %}" class="btn btn-danger-outline">Delete item</a>
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
