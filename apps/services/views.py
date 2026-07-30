@@ -78,7 +78,6 @@ def service_update(request, pk):
 
         if form.is_valid() and image_form.is_valid():
             service = form.save()
-            # Handle multiple image uploads - add new images
             images = request.FILES.getlist('image')
             for image in images:
                 if image:
@@ -91,7 +90,8 @@ def service_update(request, pk):
     return render(request, "services/service_form.html", {
         "form": form,
         "image_form": image_form,
-        "action": "Update"
+        "action": "Update",
+        "object": service,  # <--- Pass object here!
     })
 
 

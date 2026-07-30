@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 
 from apps.catalog.models import Category, CampusLocation
+from apps.common.image_processing import process_image, processed_filename
 
 
 class Service(models.Model):
@@ -51,6 +52,19 @@ class ServiceImage(models.Model):
         if self.service_id and self.service.images.count() >= 15 and not self.pk:
             raise ValidationError("A maximum of 15 images is allowed per service.")
 
+    def save(self, *args, **kwargs):
+        # NOTE: this override didn't exist before -- clean() was defined
+        # but nothing ever called it, so the 15-image cap was silently
+        # unenforced. Mirrors GoodImage.save() exactly.
+        self.clean()
+
+        if self.image and not self.image._committed:
+            processed = process_image(self.image)
+            if processed:
+                new_name = processed_filename(self.image.name)
+                self.image.save(new_name, processed, save=False)
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Image for {self.service.title}"
-    

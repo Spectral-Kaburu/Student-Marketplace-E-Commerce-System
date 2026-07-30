@@ -3,33 +3,34 @@
 {% block content %}
 <a href="{% url 'service_list' %}" class="btn-ghost" style="display:inline-block;margin-bottom:24px;font-size:14px;font-weight:500;">← Back to services</a>
 
-<div style="display:grid;grid-template-columns:1fr;gap:32px;" class="detail-grid">
-    <style>@media (min-width: 768px){ .detail-grid { grid-template-columns: 1fr 1fr; } }</style>
-
-    <div class="listing-media" style="border-radius:var(--radius-lg);border:1px solid var(--amber-100);position:relative;">
+<div class="detail-grid">
+    <div class="detail-gallery">
         {% with images=service.images.all %}
             {% if images %}
                 {% with first_image=images.first %}
-                    {% if first_image.image %}
-                        <img id="main-image" src="{{ first_image.image.url }}" alt="{{ service.title }}" style="width:100%;height:auto;border-radius:var(--radius-lg);">
-                    {% else %}
-                        <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
-                    {% endif %}
+                    <div class="detail-gallery-main-wrapper">
+                        {% if first_image.image %}
+                            <img id="main-image" class="detail-gallery-main" src="{{ first_image.image.url }}" alt="{{ service.title }}">
+                        {% else %}
+                            <img class="detail-gallery-main" src="{% static 'img/placeholder.png' %}" alt="No image">
+                        {% endif %}
+                    </div>
                 {% endwith %}
                 {% if images|length > 1 %}
-                    <div class="image-thumbnails" style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:4px;">
+                    <div class="detail-thumbnails-floating">
                         {% for img in images %}
                             {% if img.image %}
                                 <img src="{{ img.image.url }}" alt="{{ service.title }} - image {{ forloop.counter }}"
-                                     class="thumbnail {% if forloop.first %}active{% endif %}"
-                                     style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius);border:2px solid {% if forloop.first %}var(--amber-500){% else %}transparent{% endif %};cursor:pointer;transition:border-color 0.2s;"
-                                     onclick="document.getElementById('main-image').src='{{ img.image.url }}'; document.querySelectorAll('.thumbnail').forEach(t=>t.style.borderColor='transparent'); this.style.borderColor='var(--amber-500)';">
+                                     class="detail-thumbnail {% if forloop.first %}active{% endif %}"
+                                     onclick="document.getElementById('main-image').src='{{ img.image.url }}'; document.querySelectorAll('.detail-thumbnail').forEach(t=>t.classList.remove('active')); this.classList.add('active');">
                             {% endif %}
                         {% endfor %}
                     </div>
                 {% endif %}
             {% else %}
-                <img src="{% static 'img/placeholder.png' %}" alt="No image" style="width:100%;height:auto;border-radius:var(--radius-lg);">
+                <div class="detail-gallery-main-wrapper">
+                    <img class="detail-gallery-main" src="{% static 'img/placeholder.png' %}" alt="No image">
+                </div>
             {% endif %}
         {% endwith %}
     </div>
